@@ -5,7 +5,7 @@ pipeline {
         stage('Get Code') {
             steps {
                 echo 'Me voy a traer el código'
-                git url: 'https://github.com/michelena-daniel/helloworld-devops-unir.git'
+                git url: 'https://github.com/michelena-daniel/helloworld-devops-unir.git', branch: 'develop'
                 bat 'dir'
                 echo WORKSPACE
             }
