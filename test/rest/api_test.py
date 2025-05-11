@@ -1,6 +1,7 @@
 import http.client
 import os
 import unittest
+from urllib.error import HTTPError
 from urllib.request import urlopen
 
 import pytest
@@ -54,6 +55,14 @@ class TestApi(unittest.TestCase):
         self.assertEqual(
             response.read().decode(), "20.0", "ERROR DIVIDE"
         )
+
+    def test_api_divide_by_zero(self):
+        url = f"{BASE_URL}/calc/divide/40/0"
+        try:
+            urlopen(url, timeout=DEFAULT_TIMEOUT)
+            self.fail("Error al dividir por cero")
+        except HTTPError as e:
+            self.assertEqual(e.code, http.client.NOT_ACCEPTABLE, f"Esperamos un 406, devuelve: {e.code}")
 
     def test_api_sqrt(self):
         url = f"{BASE_URL_MOCK}/calc/sqrt/64"
