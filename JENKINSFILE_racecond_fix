@@ -35,7 +35,7 @@ pipeline {
                                 for /l %%i in (1,1,%NUMBER_OF_PROCESSORS%) do start "" /B powershell -NoProfile -WindowStyle Hidden -Command "while($true){Get-Random | Out-Null}"
                             '''
 							
-							sleep(time: 10, unit: 'SECONDS')
+			    sleep(time: 10, unit: 'SECONDS')
                             
                             bat '''
                                 set FLASK_APP=app\\api.py
@@ -44,12 +44,12 @@ pipeline {
                                 start "wiremock" /b java -jar C:\\Users\\danie\\source\\repos\\EjerciciosUnir\\wiremock\\wiremock-standalone-4.0.0-beta.2.jar --port 9090 --root-dir C:\\Users\\danie\\source\\repos\\EjerciciosUnir\\wiremock
                             '''
 							
-							sleep(time: 10, unit: 'SECONDS')
+			    sleep(time: 10, unit: 'SECONDS')
 							
-							bat '''
-								SET PYTHONPATH=%WORKSPACE%
+			    bat '''
+				SET PYTHONPATH=%WORKSPACE%
                                 pytest --junitxml=result-rest.xml test\\rest
-							'''
+			   '''
                         }
                     }
                 }
