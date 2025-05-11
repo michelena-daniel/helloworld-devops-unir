@@ -3,10 +3,10 @@ pipeline {
 
     stages {
         stage('Get Code') {
-			agent { label 'agent-windows' }
+	    agent { label 'agent-windows' }
             steps {
-				bat 'whoami & hostname'
-				echo WORKSPACE
+		bat 'whoami & hostname'
+		echo WORKSPACE
                 echo 'Clonamos repo'
                 git url: 'https://github.com/michelena-daniel/helloworld-devops-unir.git'				
                 bat 'dir'
@@ -20,10 +20,10 @@ pipeline {
         }
 
         stage('Build') {
-			agent { label 'agent-windows' }
+	    agent { label 'agent-windows' }
             steps {
-				bat 'whoami & hostname'
-				echo WORKSPACE
+		bat 'whoami & hostname'
+		echo WORKSPACE
                 echo 'Compilacion mock'
             }
         }
@@ -31,16 +31,16 @@ pipeline {
         stage('Tests') {
             parallel {
                 stage('Unit') {
-					agent { label 'agent-unit' }
+		    agent { label 'agent-unit' }
                     steps {
                         bat 'whoami & hostname'
-					    echo WORKSPACE
-						unstash 'repo'
+			echo WORKSPACE
+			unstash 'repo'
                         bat '''
                             SET PYTHONPATH=.
                             pytest --junitxml=result-unit.xml test\\unit
                         '''
-						stash name: 'unit-result', includes: 'result-unit.xml'
+			stash name: 'unit-result', includes: 'result-unit.xml'
                     }
                     post {
                         always {
@@ -50,11 +50,11 @@ pipeline {
                 }
 
                 stage('Rest') {
-					agent { label 'agent-unit' }
+		    agent { label 'agent-unit' }
                     steps {
                         bat 'whoami & hostname'
-						echo WORKSPACE
-						unstash 'repo'
+			echo WORKSPACE
+			unstash 'repo'
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             bat '''								
                                 set FLASK_APP=app\\api.py
@@ -70,7 +70,7 @@ pipeline {
                                 pytest --junitxml=result-rest.xml test\\rest
                             '''
                         }
-						stash name: 'rest-result', includes: 'result-rest.xml'
+			stash name: 'rest-result', includes: 'result-rest.xml'
                     }
                     post {
                         always {
@@ -81,12 +81,12 @@ pipeline {
             }
         }
         stage('Results') {
-			agent { label 'principal' }
+	    agent { label 'principal' }
             steps(){
-				unstash 'unit-result'
-				unstash 'rest-result'				
-				bat 'whoami & hostname'
-				echo WORKSPACE
+		unstash 'unit-result'
+		unstash 'rest-result'				
+		bat 'whoami & hostname'
+		echo WORKSPACE
                 junit 'result*.xml'
             }
             post {
