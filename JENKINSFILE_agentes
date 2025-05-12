@@ -84,6 +84,7 @@ pipeline {
 		bat 'whoami & hostname'
 		echo WORKSPACE
                 junit 'result*.xml'
+		sleep(time: 5, unit: 'SECONDS')
             }
         }
         stage('Cleanup') {
