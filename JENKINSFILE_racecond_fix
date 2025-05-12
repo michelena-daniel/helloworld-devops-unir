@@ -2,20 +2,56 @@ pipeline {
     agent any
 
     stages {
-        stage('Get Code') {
+        stage('Clone') {
             steps {
-                echo 'Me voy a traer el código'
                 git url: 'https://github.com/michelena-daniel/helloworld-devops-unir.git', branch: 'feature_fix_racecond'
+                bat 'dir test\\wiremock && dir test\\wiremock\\mappings'
                 bat 'dir'
-                echo WORKSPACE
             }
         }
 
         stage('Build') {
             steps {
-                echo 'NO HAY QUE COMPILAR NADA. ESTO ES PYTHON.'
+                echo 'No compiling, we are running python.'
             }
         }
+		
+		stage('BootUpServices') {
+			steps {
+				catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+					echo 'Start CPU overload'
+                    bat '''
+                         for /l %%i in (1,1,%NUMBER_OF_PROCESSORS%) do start "" /B powershell -NoProfile -WindowStyle Hidden -Command "while($true){Get-Random | Out-Null}"
+                    '''							
+					sleep(time: 5, unit: 'SECONDS')
+                    
+					echo 'Boot up services'
+                    bat '''
+                        set FLASK_APP=app\\api.py
+                        set FLASK_ENV=development
+                        start "flask" /b flask run
+                    '''
+                    echo 'Mount wiremock container'
+                    script {
+                      bat 'docker rm -f wiremock || echo "Nothing to remove."'
+                      def ws = env.WORKSPACE.replaceAll('\\\\','/')
+                      bat """
+                        docker run -d --rm -p 9090:8080 --name wiremock ^
+                          -v "${ws}/test/wiremock:/home/wiremock" ^
+                          wiremock/wiremock:3.13.0 ^
+                          --root-dir /home/wiremock ^
+                          --verbose
+                      """
+                    }
+                    retry(10) {
+                      bat 'curl -f http://localhost:9090/__admin/mappings || exit 1'
+                      sleep time:1, unit:'SECONDS'
+                    }
+                    echo 'Wiremock loaded.'
+					sleep(time: 5, unit: 'SECONDS')
+				}
+			}
+		}
 
         stage('Tests') {
             parallel {
@@ -31,25 +67,10 @@ pipeline {
                 stage('Rest') {
                     steps {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                            bat '''
-                                for /l %%i in (1,1,%NUMBER_OF_PROCESSORS%) do start "" /B powershell -NoProfile -WindowStyle Hidden -Command "while($true){Get-Random | Out-Null}"
-                            '''
-							
-			    sleep(time: 10, unit: 'SECONDS')
-                            
-                            bat '''
-                                set FLASK_APP=app\\api.py
-                                set FLASK_ENV=development
-                                start "flask" /b flask run
-                                start "wiremock" /b java -jar C:\\Users\\danie\\source\\repos\\EjerciciosUnir\\wiremock\\wiremock-standalone-4.0.0-beta.2.jar --port 9090 --root-dir C:\\Users\\danie\\source\\repos\\EjerciciosUnir\\wiremock
-                            '''
-							
-			    sleep(time: 10, unit: 'SECONDS')
-							
-			    bat '''
-				SET PYTHONPATH=%WORKSPACE%
+							bat '''
+								SET PYTHONPATH=.
                                 pytest --junitxml=result-rest.xml test\\rest
-			   '''
+							'''
                         }
                     }
                 }
@@ -59,6 +80,14 @@ pipeline {
             steps(){
                 junit 'result*.xml'
             }
+        }
+    }
+    post {
+        always {
+            cleanWs(cleanWhenNotBuilt: false,
+                    deleteDirs: true,
+                    disableDeferredWipeout: true,
+                    notFailBuild: true)
         }
     }
 }
