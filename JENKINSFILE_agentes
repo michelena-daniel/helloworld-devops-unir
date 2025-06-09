@@ -9,7 +9,7 @@ pipeline {
 				bat 'whoami & hostname'
 				echo WORKSPACE
                 echo 'Me voy a traer el código'
-                git url: 'https://github.com/michelena-daniel/helloworld-devops-unir.git'
+                git url: 'https://github.com/michelena-daniel/helloworld-devops-unir.git', branch: 'feature_fix_coverage'
                 bat 'dir'
                 stash name: 'repo', includes: '**'
             }
